@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title id="pageTitle">🍱 企業員工團購訂餐中心 v2.5.0</title>
+  <title id="pageTitle">🍱 企業員工團購訂餐中心 v2.5.1</title>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
   <!-- 🌟 引入同目錄下的獨立 firebaseConfig.js 設定檔 (若預覽環境無外部檔則自動略過使用內建備援) -->
@@ -492,7 +492,7 @@
       <div class="company-title">
         <span>🏢</span>
         <span id="headerCompanyName">企業員工團購訂餐中心</span>
-        <span style="background:rgba(255,255,255,0.18); color:#fde68a; font-family:monospace; font-size:11px; font-weight:900; padding:2px 7px; border-radius:6px; border:1px solid rgba(255,255,255,0.25);">v2.5.0</span>
+        <span style="background:rgba(255,255,255,0.18); color:#fde68a; font-family:monospace; font-size:11px; font-weight:900; padding:2px 7px; border-radius:6px; border:1px solid rgba(255,255,255,0.25);">v2.5.1</span>
       </div>
       <button class="profile-pill" onclick="openProfileModal(true)">
         <span>⚙️</span>
@@ -1033,7 +1033,7 @@
         if (doc.exists) {
           companySettings = { ...companySettings, ...doc.data() };
           const sName = companySettings.store_name || "企業員工團購訂餐中心";
-          document.getElementById("pageTitle").innerText = `🍱 ${sName} v2.5.0`;
+          document.getElementById("pageTitle").innerText = `🍱 ${sName} v2.5.1`;
           document.getElementById("headerCompanyName").innerText = sName;
           document.getElementById("companyNoticeText").innerText = companySettings.store_notice || "餐點送達清點無誤後將發送通知。";
           renderTodayOrdersView();

@@ -1,7 +1,7 @@
 {
   "source_repository": "company-order/company-order-templete",
   "source_branch": "main",
-  "last_synced_commit": "64c8bfa283edecf309502d5f41bf0ee988b1e743",
+  "last_synced_commit": "d4e01e8ff2d5e730714e79af6f7ae815666d4ace",
   "sync_files": [
     "index.html",
     "admin.html"
