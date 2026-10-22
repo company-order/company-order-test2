@@ -1,0 +1,14 @@
+
+{
+  "source_repository": "company-order/company-order-templete",
+  "source_branch": "main",
+  "last_synced_commit": "e5fc8563ffb9fb1740d9f80698f073ef81679218",
+  "sync_files": [
+    "index.html",
+    "admin.html"
+  ],
+  "protected_files": [
+    "firebaseConfig.js",
+    "menu.html"
+  ]
+}
