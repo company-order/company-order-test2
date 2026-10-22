@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title id="pageTitle">🍱 企業員工團購訂餐中心 v2.5.0</title>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore-compat.js"></script>
+  <!-- 🌟 引入同目錄下的獨立 firebaseConfig.js 設定檔 (若預覽環境無外部檔則自動略過使用內建備援) -->
+  <script src="firebaseConfig.js" onerror="console.info('Using fallback firebaseConfig')"></script>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-dark: #1e3a8a;
+      --primary-light: #eff6ff;
+      --accent: #d97706;
+      --accent-light: #fffbeb;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --sub: #64748b;
+      --border: #e2e8f0;
+      --green: #15803d;
+      --green-light: #dcfce7;
+      --rose: #e11d48;
+      --rose-light: #ffe4e6;
+      --purple: #6d28d9;
+      --purple-light: #f3e8ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding-bottom: 110px;
+      min-height: 100vh;
+    }
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: white;
+      padding: 14px 16px 12px;
+      position: sticky;
+      top: 0;
+      z-index: 80;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.18);
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .company-title {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .profile-pill {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      color: #fff;
+      padding: 5px 11px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      backdrop-filter: blur(4px);
+      white-space: nowrap;
+    }
+    .profile-pill:active { transform: scale(0.97); }
+    .session-banner {
+      margin-top: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 8px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .countdown-badge {
+      background: #fbbf24;
+      color: #0f172a;
+      font-weight: 900;
+      padding: 3px 9px;
+      border-radius: 6px;
+      font-size: 12px;
+      letter-spacing: 0.3px;
+    }
+    .countdown-badge.closed {
+      background: var(--rose);
+      color: white;
+    }
+    .nav-views {
+      display: flex;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 90px;
+      z-index: 75;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .nav-view-btn {
+      flex: 1;
+      padding: 12px 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--sub);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .nav-view-btn.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: #f8fafc;
+    }
+    .count-dot {
+      background: var(--rose);
+      color: white;
+      font-size: 11px;
+      padding: 1px 6px;
+      border-radius: 10px;
+      font-weight: 900;
+    }
+    .main-container {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 12px 14px;
+    }
+    .notice-bar {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #92400e;
+      padding: 9px 12px;
+      border-radius: 10px;
+      font-size: 12px;
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      line-height: 1.45;
+    }
+    .store-tabs {
+      display: flex;
+      overflow-x: auto;
+      gap: 8px;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .store-tabs::-webkit-scrollbar { display: none; }
+    .store-pill {
+      padding: 9px 14px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 800;
+      white-space: nowrap;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+    .store-pill.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    .cat-tabs {
+      display: flex;
+      overflow-x: auto;
+      gap: 6px;
+      padding: 4px 0 10px;
+      scrollbar-width: none;
+    }
+    .cat-tabs::-webkit-scrollbar { display: none; }
+    .cat-btn {
+      padding: 6px 13px;
+      border-radius: 20px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #475569;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .cat-btn.active {
+      background: #0f172a;
+      color: white;
+      border-color: #0f172a;
+    }
+    .menu-card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+      border: 1px solid var(--border);
+      gap: 12px;
+    }
+    .menu-card.sold-out { opacity: 0.55; filter: grayscale(90%); }
+    .item-title { font-size: 16px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+    .item-meta { font-size: 12px; color: var(--sub); margin-bottom: 4px; }
+    .item-price { font-size: 15px; font-weight: 900; color: var(--primary); }
+    .btn-add {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      flex-shrink: 0;
+      box-shadow: 0 2px 6px rgba(30, 64, 175, 0.25);
+    }
+    .btn-add:disabled {
+      background: #94a3b8;
+      box-shadow: none;
+      cursor: not-allowed;
+    }
+    .cart-bar {
+      position: fixed;
+      bottom: 16px;
+      left: 14px;
+      right: 14px;
+      max-width: 600px;
+      margin: 0 auto;
+      background: #0f172a;
+      color: white;
+      border-radius: 28px;
+      padding: 10px 14px 10px 18px;
+      display: none;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 10px 25px rgba(15, 23, 42, 0.35);
+      z-index: 85;
+      border: 1px solid #334155;
+    }
+    .cart-badge {
+      background: #f59e0b;
+      color: #0f172a;
+      font-size: 13px;
+      font-weight: 900;
+      min-width: 26px;
+      height: 26px;
+      border-radius: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 6px;
+    }
+    .btn-checkout {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 3px 12px rgba(0,0,0,0.04);
+      border: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    .stepper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      padding: 12px 10px;
+      border-radius: 12px;
+      margin: 12px 0;
+      border: 1px solid var(--border);
+    }
+    .step-item {
+      flex: 1;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #94a3b8;
+      position: relative;
+    }
+    .step-item.active { color: var(--primary); font-weight: 900; }
+    .step-item.done { color: var(--green); font-weight: 800; }
+    .step-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 4px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+    .step-item.active .step-dot { background: var(--primary); color: white; box-shadow: 0 0 0 3px #dbeafe; }
+    .step-item.done .step-dot { background: var(--green); color: white; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stat-box {
+      background: white;
+      border-radius: 14px;
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .stat-label { font-size: 11px; color: var(--sub); font-weight: 700; margin-bottom: 4px; }
+    .stat-val { font-size: 18px; font-weight: 900; color: var(--text); }
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.72);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      backdrop-filter: blur(2px);
+    }
+    .modal-box {
+      background: white;
+      border-radius: 18px;
+      width: 100%;
+      max-width: 440px;
+      max-height: 88vh;
+      overflow-y: auto;
+      padding: 20px;
+      box-shadow: 0 15px 35px rgba(0,0,0,0.25);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 14px;
+    }
+    .close-btn { background: none; border: none; font-size: 22px; color: #64748b; cursor: pointer; }
+    .input-field {
+      width: 100%;
+      padding: 11px 12px;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 10px;
+      font-size: 15px;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      background: #fff;
+    }
+    .input-field:focus { outline: none; border-color: var(--primary); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .chip {
+      padding: 8px 13px;
+      border-radius: 10px;
+      border: 1.5px solid #cbd5e1;
+      background: #f8fafc;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .chip.selected {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 900;
+    }
+    .btn {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      font-size: 14px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-green { background: var(--green); color: white; }
+    .btn-orange { background: var(--accent); color: white; }
+    .btn-gray { background: #e2e8f0; color: #334155; }
+    .btn-danger-outline { background: #fff1f2; color: var(--rose); border: 1px solid #fecdd3; }
+    #toast {
+      position: fixed;
+      bottom: 84px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0f172a;
+      color: #fbbf24;
+      border: 1px solid #334155;
+      padding: 11px 22px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 800;
+      display: none;
+      z-index: 10000;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="toast">提示訊息</div>
+
+  <!-- 1. 總部遠端停權鎖定遮罩 -->
+  <div id="licenseLockOverlay" class="modal-overlay" style="z-index: 9500; background: rgba(2, 6, 23, 0.96); display: none;">
+    <div class="modal-box" style="text-align: center; padding: 36px 22px; background: #1e293b; color: white; border: 1px solid #334155;">
+      <div style="font-size: 48px; margin-bottom: 12px;">🔒</div>
+      <h2 style="color: #f43f5e; font-size: 22px; margin-bottom: 10px;">系統服務暫停中</h2>
+      <p id="licenseLockReason" style="font-size: 14px; color: #cbd5e1; line-height: 1.6; white-space: pre-line;">
+        本企業團購訂餐系統目前維護或授權暫停中，請洽詢人事總務部。
+      </p>
+    </div>
+  </div>
+
+  <!-- 2. 首次進入 / 修改個人部門與工號建檔彈窗 -->
+  <div id="profileModal" class="modal-overlay" style="z-index: 500;">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>👤 員工訂餐身分設定</h3>
+        <button id="closeProfileBtn" class="close-btn" onclick="closeProfileModal()" style="display:none;">✕</button>
+      </div>
+      <p style="font-size: 12px; color: var(--sub); margin-bottom: 14px; line-height: 1.5;">
+        首次設定後系統將自動記憶於您的手機，日後點餐免重填！若換新手機，輸入相同「工號」或「姓名」即可自動同步雲端歷史帳單。
+      </p>
+
+      <label style="font-size: 13px; font-weight: 800; color: #334155;">🏢 所屬部門 *必選</label>
+      <select id="profDeptSelect" class="input-field" style="font-weight: 700;"></select>
+
+      <label style="font-size: 13px; font-weight: 800; color: #334155;">🧑 員工真實姓名 *必填</label>
+      <input type="text" id="profEmpName" class="input-field" placeholder="例：王小明">
+
+      <label style="font-size: 13px; font-weight: 800; color: #334155;">🪪 員工工號 / 代號 *必填 (換機同步與扣薪對帳依據)</label>
+      <input type="text" id="profEmpId" class="input-field" placeholder="例：EMP001 或 分機號碼" style="text-transform: uppercase;">
+
+      <div style="background:#f8fafc; border:1px dashed #cbd5e1; border-radius:10px; padding:8px 10px; margin-bottom:14px; font-size:12px; color:#475569;">
+        💡 <strong>快速測試帶入：</strong>
+        <a href="javascript:void(0)" onclick="quickFillProfile('資訊部','王小明','IT01')" style="color:var(--primary); font-weight:800; margin-left:4px;">資訊部-王小明(IT01)</a> ｜
+        <a href="javascript:void(0)" onclick="quickFillProfile('業務部','李美華','SA02')" style="color:var(--green); font-weight:800; margin-left:4px;">業務部-李美華(SA02)</a>
+      </div>
+
+      <p id="profErrorMsg" style="display:none; color:var(--rose); font-size:12px; font-weight:800; margin-bottom:10px; text-align:center;"></p>
+
+      <button class="btn btn-primary" style="width: 100%; padding: 13px; font-size: 15px;" onclick="saveEmployeeProfile()">
+        💾 儲存身分並同步我的歷史帳單
+      </button>
+    </div>
+  </div>
+
+  <!-- 頂部導覽列 -->
+  <header class="header">
+    <div class="header-top">
+      <div class="company-title">
+        <span>🏢</span>
+        <span id="headerCompanyName">企業員工團購訂餐中心</span>
+        <span style="background:rgba(255,255,255,0.18); color:#fde68a; font-family:monospace; font-size:11px; font-weight:900; padding:2px 7px; border-radius:6px; border:1px solid rgba(255,255,255,0.25);">v2.5.0</span>
+      </div>
+      <button class="profile-pill" onclick="openProfileModal(true)">
+        <span>⚙️</span>
+        <span id="headerProfileText">設定部門/姓名</span>
+      </button>
+    </div>
+
+    <div class="session-banner">
+      <div>
+        <strong id="bannerSessionTitle" style="font-size: 13px; color: #fff;">📅 載入今日開團資訊中...</strong>
+        <span id="bannerSubsidyTag" style="display:none; margin-left:6px; background:#dcfce7; color:#15803d; padding:2px 7px; border-radius:6px; font-weight:800; font-size:11px;">
+          💰 公司補助 $0
+        </span>
+      </div>
+      <div id="bannerCountdownBadge" class="countdown-badge">⏰ 計算中...</div>
+    </div>
+  </header>
+
+  <!-- 三大主功能導覽分頁 -->
+  <div class="nav-views">
+    <button id="navBtn_menu" class="nav-view-btn active" onclick="switchMainView('menu')">
+      🍱 今日開團點餐
+    </button>
+    <button id="navBtn_today" class="nav-view-btn" onclick="switchMainView('today')">
+      ⏳ 今日進度 <span id="todayOrderCountDot" class="count-dot" style="display:none;">0</span>
+    </button>
+    <button id="navBtn_history" class="nav-view-btn" onclick="switchMainView('history')">
+      📒 個人對帳與歷史
+    </button>
+  </div>
+
+  <!-- 總務窗口清點到餐廣播橫幅 -->
+  <div class="main-container" style="padding-bottom:0;">
+    <div id="empMealArrivalBanner" style="display:none; background:linear-gradient(135deg,#dcfce7 0%,#bbf7d0 100%); border:2px solid #22c55e; color:#14532d; padding:12px 14px; border-radius:12px; margin-bottom:4px; box-shadow:0 4px 12px rgba(34,197,94,0.18);">
+      <div style="font-size:15px; font-weight:900;" id="empMealArrivalTitle">🎉 總務窗口通知：今日團購餐點已送達公司！</div>
+      <div style="font-size:12px; color:#166534; margin-top:3px;" id="empMealArrivalDesc">窗口已清點數量無誤，請各部門助理或點餐同仁前往領餐區領取。</div>
+    </div>
+  </div>
+
+  <!-- ==================== 視角 1：今日開團點餐區 ==================== -->
+  <div id="view_menu" class="main-container">
+    <!-- 多場次團購並行切換列 -->
+    <div id="multiSessionSwitcherCard" style="display:none; background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 100%); color:white; padding:12px 14px; border-radius:14px; margin-bottom:12px; box-shadow:0 4px 12px rgba(30,64,175,0.2);">
+      <div style="font-size:12px; font-weight:800; color:#bfdbfe; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+        <span>🔥 目前有多個團購場次開放中，請點選要訂購的場次：</span>
+        <span id="multiSessionCountBadge" style="background:#fbbf24; color:#0f172a; padding:2px 8px; border-radius:10px; font-size:11px; font-weight:900;">2 團進行中</span>
+      </div>
+      <div id="multiSessionPillsBar" style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none;"></div>
+    </div>
+
+    <div id="companyNoticeBar" class="notice-bar">
+      <span>🕒 <strong id="sessionTimeSummaryText">開放與截止時間載入中...</strong> ｜ 📢 <span id="companyNoticeText">餐點送達清點無誤後將發送通知。</span></span>
+    </div>
+
+    <!-- 截止或關閉提示卡 -->
+    <div id="sessionClosedCard" class="card" style="display:none; text-align:center; padding:32px 20px; border:2px dashed #cbd5e1;">
+      <div id="sessionClosedIcon" style="font-size:44px; margin-bottom:10px;">⏰</div>
+      <h3 id="sessionClosedTitle" style="font-size:19px; font-weight:900; color:var(--rose); margin-bottom:8px;">今日團購已截止收單</h3>
+      <p id="sessionClosedDesc" style="font-size:14px; color:var(--sub); line-height:1.6; margin-bottom:16px;"></p>
+      <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="switchMainView('today')">📋 查看我今日已點的訂單</button>
+        <button class="btn btn-gray" onclick="switchMainView('history')">📒 查看本月累計對帳單</button>
+      </div>
+    </div>
+
+    <!-- 開放點餐主體區 -->
+    <div id="sessionOpenMenuArea">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+        <span style="font-size:12px; font-weight:800; color:var(--sub);">👇 點選今日開放店家（可跨店混搭便當＋飲料同車結帳）：</span>
+      </div>
+      <div id="openStoresTabBar" class="store-tabs"></div>
+      <div id="storeCategoryTabBar" class="cat-tabs"></div>
+      <div id="menuItemsListContainer"></div>
+    </div>
+  </div>
+
+  <!-- ==================== 視角 2：今日審核進度與退回修改 ==================== -->
+  <div id="view_today" class="main-container" style="display:none;">
+    <div class="card" style="background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%); border-color:#bfdbfe;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+        <div>
+          <h3 style="font-size:16px; font-weight:900; color:#1e40af;">📋 今日點餐審核與領餐進度</h3>
+          <p id="todayApprovalModeHint" style="font-size:12px; color:#1e3a8a; margin-top:3px;">
+            在後台尚未按「核准」且未超過結單時間前，您可隨時退回購物車修改餐點！
+          </p>
+        </div>
+        <button class="btn btn-primary" style="padding:7px 12px; font-size:12px;" onclick="switchMainView('menu')">
+          ＋ 繼續加點
+        </button>
+      </div>
+    </div>
+
+    <div id="todayOrdersContainer"></div>
+  </div>
+
+  <!-- ==================== 視角 3：個人長期點餐紀錄與月結對帳 ==================== -->
+  <div id="view_history" class="main-container" style="display:none;">
+    <div class="card" style="padding:14px 16px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <div>
+        <div style="font-size:12px; color:var(--sub); font-weight:700;">目前對帳員工身分 (雲端即時同步)</div>
+        <div id="historyProfileSummary" style="font-size:16px; font-weight:900; color:var(--primary); margin-top:2px;">--</div>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <select id="historyFilterRange" class="input-field" style="width:auto; margin:0; padding:6px 10px; font-size:12px; font-weight:800;" onchange="renderPersonalHistoryView()">
+          <option value="week">📅 本週帳單 (週結)</option>
+          <option value="month" selected>🗓️ 本月帳單 (月結)</option>
+          <option value="days30">📆 近 30 天紀錄</option>
+          <option value="all">📜 全部歷史</option>
+        </select>
+        <button class="btn btn-gray" style="padding:6px 10px; font-size:12px;" onclick="openProfileModal(true)">🔄 換機/改工號</button>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-label">區間總餐數</div>
+        <div id="statTotalOrders" class="stat-val">0 單</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">餐點原始總額</div>
+        <div id="statRawAmount" class="stat-val" style="color:#475569;">$0</div>
+      </div>
+      <div class="stat-box" style="background:#fff1f2; border-color:#fecdd3;">
+        <div class="stat-label" style="color:#be123c;">待扣薪/未繳自付</div>
+        <div id="statUnpaidSelf" class="stat-val" style="color:#e11d48;">$0</div>
+      </div>
+    </div>
+
+    <div id="historyOrdersContainer"></div>
+  </div>
+
+  <!-- 底部懸浮購物車 Bar -->
+  <div id="cartBar" class="cart-bar">
+    <div style="display:flex; align-items:center; gap:10px;">
+      <div id="cartCountBadge" class="cart-badge">0</div>
+      <div>
+        <div style="font-size:15px; font-weight:900;">合計 $<span id="cartRawTotal">0</span></div>
+        <div id="cartSubsidySubtext" style="font-size:11px; color:#fde68a; display:none;">扣補助後自付 $<span id="cartSelfPayTotal">0</span></div>
+      </div>
+    </div>
+    <button class="btn-checkout" onclick="openCartModal()">檢視跨店購物車 🛒</button>
+  </div>
+
+  <!-- 餐點規格與加料選擇 Modal -->
+  <div id="itemModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <div>
+          <span id="modalItemStoreTag" style="font-size:11px; background:#dbeafe; color:#1e40af; padding:2px 7px; border-radius:6px; font-weight:800;">店家</span>
+          <h3 id="modalItemName" style="font-size:18px; font-weight:900; margin-top:4px;">餐點名稱</h3>
+        </div>
+        <button class="close-btn" onclick="closeItemModal()">✕</button>
+      </div>
+
+      <div id="modalAddonGroup" style="display:none; margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:800; color:#475569;">客製化選項 (可複選)</label>
+        <div id="modalAddonChips" class="chips"></div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <label style="font-size:13px; font-weight:800; color:#475569;">單品備註 (選填，例：飯少、不要香菜)</label>
+        <input type="text" id="modalItemCustomNote" class="input-field" style="margin-bottom:0;" placeholder="輸入客製需求...">
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:10px 14px; border-radius:12px; border:1px solid var(--border);">
+        <span style="font-size:14px; font-weight:800;">購買數量</span>
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button class="btn btn-gray" style="width:34px; height:34px; padding:0; font-size:18px;" onclick="changeModalQty(-1)">−</button>
+          <strong id="modalItemQty" style="font-size:17px; min-width:24px; text-align:center;">1</strong>
+          <button class="btn btn-gray" style="width:34px; height:34px; padding:0; font-size:18px;" onclick="changeModalQty(1)">+</button>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" style="width:100%; margin-top:16px; padding:14px; font-size:16px;" onclick="confirmAddItemToCart()">
+        ＋ 加入購物車 ($<span id="modalItemSubtotal">0</span>)
+      </button>
+    </div>
+  </div>
+
+  <!-- 購物車檢視與送單確認 Modal -->
+  <div id="cartModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>🛒 確認跨店團購明細</h3>
+        <button class="close-btn" onclick="closeCartModal()">✕</button>
+      </div>
+
+      <div style="background:#f8fafc; padding:10px 12px; border-radius:10px; margin-bottom:12px; border:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; font-size:13px;">
+        <div>
+          <span style="color:var(--sub);">點餐人：</span>
+          <strong id="cartModalEmpInfo" style="color:var(--primary);">--</strong>
+        </div>
+        <a href="javascript:void(0)" onclick="closeCartModal(); openProfileModal(true);" style="font-size:12px; color:#2563eb; font-weight:800;">修改身分</a>
+      </div>
+
+      <div id="cartModalItemsList" style="max-height:240px; overflow-y:auto; margin-bottom:12px;"></div>
+
+      <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:12px; border-radius:12px; margin-bottom:12px;">
+        <div style="display:flex; justify-content:space-between; font-size:14px; color:#166534; margin-bottom:4px;">
+          <span>餐點原始總額：</span>
+          <strong id="checkoutRawTotal">$0</strong>
+        </div>
+        <div id="checkoutSubsidyRow" style="display:none; justify-content:space-between; font-size:13px; color:#15803d; margin-bottom:4px;">
+          <span>💰 本場次公費補助/請客折抵：</span>
+          <strong id="checkoutSubsidyVal">-$0</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:17px; font-weight:900; color:#14532d; border-top:1px dashed #86efac; padding-top:6px;">
+          <span>員工應自付 / 薪資扣款額：</span>
+          <span id="checkoutSelfPayVal">$0</span>
+        </div>
+      </div>
+
+      <div id="dynamicPinVerifyBox" style="display:none; background:#f3e8ff; border:1.5px solid #d8b4fe; padding:12px; border-radius:12px; margin-bottom:12px;">
+        <label style="font-size:13px; font-weight:900; color:#6d28d9; display:block; margin-bottom:4px;">
+          🔐 請輸入今日公司 LINE 群公佈之「動態訂餐碼」 *必填
+        </label>
+        <input type="tel" id="checkoutDynamicPinInput" class="input-field" style="margin:0; text-align:center; font-size:20px; font-weight:900; letter-spacing:6px; color:#6d28d9;" placeholder="輸入驗證碼" oninput="document.getElementById('checkoutErrorMsg').style.display='none'">
+      </div>
+
+      <input type="text" id="checkoutOrderNote" class="input-field" placeholder="整單備註 (選填，例：部門統一領取)">
+
+      <p id="checkoutErrorMsg" style="display:none; color:var(--rose); font-size:13px; font-weight:800; text-align:center; margin-bottom:10px;"></p>
+
+      <button id="btnSubmitGroupOrder" class="btn btn-green" style="width:100%; padding:14px; font-size:16px;" onclick="submitGroupOrder()">
+        ✅ 確認送出團購訂單
+      </button>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener("unhandledrejection", function(e) {
+      if (e && e.reason) {
+        const msg = String(e.reason.message || e.reason);
+        if (msg.includes("Firestore") || msg.includes("firebase") || msg.includes("Quota") || msg.includes("Failed to fetch")) {
+          e.preventDefault();
+        }
+      }
+    });
+
+    const _origConsoleError = console.error;
+    console.error = function(...args) {
+      const msg = args.map(a => String(a)).join(" ");
+      if (msg.includes("@firebase/firestore") || msg.includes("Could not reach Cloud Firestore") || msg.includes("firebaseConfig.js")) return;
+      _origConsoleError.apply(console, args);
+    };
+
+    const activeFirebaseConfig = (typeof window.FIREBASE_CONFIG !== "undefined") ? window.FIREBASE_CONFIG : (typeof firebaseConfig !== "undefined" ? firebaseConfig : {
+      apiKey: "AIzaSyATsboLh7eFb6FzSfMOO_Vkp7-da1Phgp8",
+      authDomain: "company-lunch-templete.firebaseapp.com",
+      projectId: "company-lunch-templete",
+      storageBucket: "company-lunch-templete.firebasestorage.app",
+      messagingSenderId: "150960345974",
+      appId: "1:150960345974:web:8c4043f84cbad4468f6057"
+    });
+    if (!firebase.apps.length) {
+      firebase.initializeApp(activeFirebaseConfig);
+    }
+    if (firebase.firestore && firebase.firestore.setLogLevel) {
+      firebase.firestore.setLogLevel('silent');
+    }
+    const db = firebase.firestore();
+    try {
+      db.settings({
+        experimentalForceLongPolling: true,
+        merge: true
+      });
+    } catch (e) {}
+
+    let storesList = [];
+    let menuItemsList = [];
+    let allEmployeeOrders = [];
+    let departmentsList = [
+      { name: "資訊部", assistant: "王小明" },
+      { name: "業務部", assistant: "李美華" },
+      { name: "行政管理部", assistant: "陳總務" },
+      { name: "生產製造部", assistant: "林組長" }
+    ];
+
+    let companySettings = {
+      store_name: "企業員工團購訂餐中心",
+      store_notice: "餐點送達並經窗口清點無誤後，系統將發送通知提醒領取。",
+      require_dept_approval: true
+    };
+
+    let allActiveSessions = [];
+    let selectedSessionId = "";
+
+    let currentSession = {
+      id: "current",
+      date_key: getTodayKey(),
+      title: "今日午餐團購",
+      open_store_ids: [],
+      deadline: "10:20",
+      published_time_str: "",
+      dynamic_pin: "",
+      subsidy_limit: 0,
+      is_full_treat: false,
+      treat_sponsor: "",
+      scheduled_start: "",
+      is_manually_closed: false,
+      is_cancelled_session: false,
+      meals_arrived: false,
+      arrived_store_names: [],
+      arrived_at_str: ""
+    };
+
+    let licenseFlags = {
+      license_active: true,
+      enable_pre_schedule: true,
+      enable_company_subsidy: true,
+      enable_dynamic_pin: true,
+      enable_default_menu: true
+    };
+
+    let empProfile = loadProfileFromStorage();
+    let activeStoreId = null;
+    let activeCategoryName = "ALL";
+
+    let cart = [];
+    let currentModalItem = null;
+    let selectedAddons = [];
+    let modalQty = 1;
+
+    function getTodayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    function formatCleanSessionTitle(rawTitle) {
+      const cleaned = String(rawTitle || "午餐團購").replace(/^\d{4}-\d{2}-\d{2}\s*/, "").trim();
+      return cleaned || "午餐團購";
+    }
+
+    // 🌟 核心輔助函式：以「店家名稱」為單位，檢查該店家今日是否已被後台標記為「已到餐」
+    function isStoreMarkedArrivedToday(storeName, sessionId) {
+      if (!storeName) return false;
+      // 1. 先檢查指定場次
+      if (sessionId) {
+        const matchedSess = allActiveSessions.find(s => s.id === sessionId);
+        if (matchedSess) {
+          if (matchedSess.meals_arrived) return true;
+          if (Array.isArray(matchedSess.arrived_store_names) && matchedSess.arrived_store_names.includes(storeName)) {
+            return true;
+          }
+        }
+      }
+      // 2. 跨場次以店為主檢核：只要今日任何一個場次已將該店家標記為 arrived_store_names，所有有關此店家的單一律顯示已到餐！
+      return allActiveSessions.some(s => {
+        const openStoreNames = storesList.filter(st => (s.open_store_ids || []).includes(st.id)).map(st => st.name);
+        if (s.meals_arrived && openStoreNames.includes(storeName)) return true;
+        return Array.isArray(s.arrived_store_names) && s.arrived_store_names.includes(storeName);
+      });
+    }
+
+    function getMonthPrefix() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    function isDateInCurrentWeek(dateStr) {
+      if (!dateStr) return false;
+      const target = new Date(dateStr + "T00:00:00");
+      if (isNaN(target.getTime())) return false;
+      const now = new Date();
+      const dayOfWeek = now.getDay() === 0 ? 7 : now.getDay();
+      const monday = new Date(now);
+      monday.setDate(now.getDate() - dayOfWeek + 1);
+      monday.setHours(0, 0, 0, 0);
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+      return target >= monday && target <= sunday;
+    }
+
+    // 🌟 完全尊重總部「模組 B (enable_company_subsidy)」開關！
+    function calcEmpOrderFinancials(ord) {
+      const rawTotal = Number(ord.total_amount || 0);
+      let subsidyUsed = 0;
+      let treatLabel = "";
+
+      if (licenseFlags.enable_company_subsidy) {
+        const matchedSess = allActiveSessions.find(s => s.id === ord.session_id) || currentSession;
+        const sessSponsor = (matchedSess.treat_sponsor || "").trim();
+
+        if (ord.treat_mode === "full") {
+          subsidyUsed = rawTotal;
+          treatLabel = ord.treat_sponsor ? `🎁 ${ord.treat_sponsor}(全額請客)` : "🎁 全額請客";
+        } else if (ord.treat_mode === "limit") {
+          const lim = Number(ord.treat_limit || 0);
+          subsidyUsed = Math.min(rawTotal, lim);
+          treatLabel = `🎁 ${ord.treat_sponsor || '限額補助'}(補助$${lim})`;
+        } else {
+          const sessLimit = Number(matchedSess.subsidy_limit || 0);
+          if (matchedSess.is_full_treat || sessLimit >= 9999) {
+            subsidyUsed = rawTotal;
+            treatLabel = sessSponsor ? `🎉 ${sessSponsor} (全額請客)` : "🎉 本場全額請客";
+          } else if (sessLimit > 0) {
+            subsidyUsed = Math.min(rawTotal, sessLimit);
+            treatLabel = sessSponsor ? `🎁 ${sessSponsor} (補助-$${subsidyUsed})` : `💰 補助(-$${subsidyUsed})`;
+          }
+        }
+      }
+
+      const selfPay = Math.max(0, rawTotal - subsidyUsed);
+      return { rawTotal, subsidyUsed, selfPay, treatLabel };
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById("toast");
+      if (!t) return;
+      t.innerText = msg;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 3000);
+    }
+
+    function loadProfileFromStorage() {
+      try {
+        const raw = localStorage.getItem("group_emp_profile_v1");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.department && parsed.employee_name && parsed.employee_id) {
+            return parsed;
+          }
+        }
+      } catch (e) {}
+      return { department: "", employee_name: "", employee_id: "" };
+    }
+
+    function saveProfileToStorage(prof) {
+      empProfile = prof;
+      try {
+        localStorage.setItem("group_emp_profile_v1", JSON.stringify(prof));
+      } catch (e) {}
+    }
+
+    function updateHeaderProfileUI() {
+      const txtEl = document.getElementById("headerProfileText");
+      const histSumEl = document.getElementById("historyProfileSummary");
+      if (empProfile.employee_name) {
+        txtEl.innerText = `${empProfile.department}・${empProfile.employee_name} (${empProfile.employee_id})`;
+        if (histSumEl) {
+          histSumEl.innerText = `${empProfile.department} — ${empProfile.employee_name} (工號: ${empProfile.employee_id})`;
+        }
+      } else {
+        txtEl.innerText = "點擊設定部門/姓名";
+        if (histSumEl) histSumEl.innerText = "尚未設定員工身分";
+      }
+    }
+
+    function populateDeptSelect() {
+      const sel = document.getElementById("profDeptSelect");
+      if (!sel) return;
+      sel.innerHTML = departmentsList.map(d => `<option value="${d.name}">${d.name} (審核助理: ${d.assistant || '無'})</option>`).join('');
+      if (empProfile.department && departmentsList.some(d => d.name === empProfile.department)) {
+        sel.value = empProfile.department;
+      }
+    }
+
+    window.openProfileModal = function(allowClose) {
+      populateDeptSelect();
+      document.getElementById("profEmpName").value = empProfile.employee_name || "";
+      document.getElementById("profEmpId").value = empProfile.employee_id || "";
+      document.getElementById("profErrorMsg").style.display = "none";
+      document.getElementById("closeProfileBtn").style.display = allowClose ? "block" : "none";
+      document.getElementById("profileModal").style.display = "flex";
+    };
+
+    window.closeProfileModal = function() {
+      if (!empProfile.employee_name || !empProfile.employee_id) return;
+      document.getElementById("profileModal").style.display = "none";
+    };
+
+    window.quickFillProfile = function(dept, name, id) {
+      populateDeptSelect();
+      document.getElementById("profDeptSelect").value = dept;
+      document.getElementById("profEmpName").value = name;
+      document.getElementById("profEmpId").value = id;
+      saveEmployeeProfile();
+    };
+
+    window.saveEmployeeProfile = function() {
+      const dept = document.getElementById("profDeptSelect").value;
+      const name = document.getElementById("profEmpName").value.trim();
+      const empId = document.getElementById("profEmpId").value.trim().toUpperCase();
+      const errEl = document.getElementById("profErrorMsg");
+
+      if (!dept || !name || !empId) {
+        errEl.innerText = "⚠️ 請完整填寫「部門」、「真實姓名」與「員工工號」！";
+        errEl.style.display = "block";
+        return;
+      }
+
+      saveProfileToStorage({
+        department: dept,
+        employee_name: name,
+        employee_id: empId
+      });
+
+      document.getElementById("profileModal").style.display = "none";
+      updateHeaderProfileUI();
+      renderTodayOrdersView();
+      renderPersonalHistoryView();
+      showToast(`✅ 已綁定身分：${dept} ${name} (${empId})，雲端帳單已同步！`);
+    };
+
+    function initRealtimeListeners() {
+      updateHeaderProfileUI();
+      if (!empProfile.employee_name || !empProfile.employee_id) {
+        openProfileModal(false);
+      }
+
+      // 1. 監聽總部授權與進階模組 Feature Flags
+      db.collection("system_settings").doc("license").onSnapshot(doc => {
+        if (doc.exists) {
+          const d = doc.data();
+          licenseFlags.license_active = d.license_active !== false;
+          licenseFlags.enable_dynamic_pin = d.enable_dynamic_pin !== false;
+          licenseFlags.enable_company_subsidy = d.enable_company_subsidy !== false;
+          licenseFlags.enable_pre_schedule = d.enable_pre_schedule !== false;
+          licenseFlags.enable_default_menu = d.enable_default_menu !== false;
+
+          const lockOverlay = document.getElementById("licenseLockOverlay");
+          if (!licenseFlags.license_active) {
+            document.getElementById("licenseLockReason").innerText = d.suspend_reason || d.lock_reason || "本系統授權目前已暫停，請洽詢系統服務商。";
+            lockOverlay.style.display = "flex";
+          } else {
+            lockOverlay.style.display = "none";
+          }
+          updateSessionStatusAndCountdown();
+          updateCartUI();
+          renderTodayOrdersView();
+          renderPersonalHistoryView();
+        }
+      }, err => console.warn("License listener:", err));
+
+      // 2. 監聽企業基本設定與公告
+      db.collection("system_settings").doc("store_info").onSnapshot(doc => {
+        if (doc.exists) {
+          companySettings = { ...companySettings, ...doc.data() };
+          const sName = companySettings.store_name || "企業員工團購訂餐中心";
+          document.getElementById("pageTitle").innerText = `🍱 ${sName} v2.5.0`;
+          document.getElementById("headerCompanyName").innerText = sName;
+          document.getElementById("companyNoticeText").innerText = companySettings.store_notice || "餐點送達清點無誤後將發送通知。";
+          renderTodayOrdersView();
+        }
+      }, err => console.warn("StoreInfo listener:", err));
+
+      // 3. 監聽部門清單設定
+      db.collection("system_settings").doc("departments_config").onSnapshot(doc => {
+        if (doc.exists && Array.isArray(doc.data().departments) && doc.data().departments.length > 0) {
+          departmentsList = doc.data().departments;
+          populateDeptSelect();
+        }
+      }, err => console.warn("Dept listener:", err));
+
+      // 4. 監聽所有開團場次集合 (group_sessions)
+      db.collection("group_sessions").onSnapshot(snap => {
+        const raw = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        const todayKey = getTodayKey();
+        // 🌟 嚴格過濾：員工端只載入「今日 (date_key === todayKey)」的團購場次，並依「截止時間由早到晚」排序編號！
+        const validList = raw.filter(s => {
+          if (s.id === "current" && raw.length > 1) return false;
+          return s.date_key === todayKey;
+        });
+
+        validList.sort((a, b) => {
+          const da = String(a.deadline || "23:59");
+          const dbTime = String(b.deadline || "23:59");
+          if (da !== dbTime) return da.localeCompare(dbTime);
+          const ta = a.created_at?.toMillis ? a.created_at.toMillis() : 0;
+          const tb = b.created_at?.toMillis ? b.created_at.toMillis() : 0;
+          return ta - tb;
+        });
+
+        allActiveSessions = validList;
+
+        const existingPicked = allActiveSessions.find(s => s.id === selectedSessionId);
+        if (existingPicked) {
+          currentSession = existingPicked;
+        } else if (allActiveSessions.length > 0) {
+          const firstOpen = allActiveSessions.find(s => !s.is_manually_closed && !s.is_cancelled_session && !s.meals_arrived && (s.open_store_ids || []).length > 0 && !isSessionPastDeadline(s));
+          currentSession = firstOpen || allActiveSessions[0];
+          selectedSessionId = currentSession.id;
+        } else {
+          selectedSessionId = "";
+          currentSession = {
+            id: "",
+            date_key: todayKey,
+            title: `${todayKey} 尚未開團`,
+            open_store_ids: [],
+            deadline: "10:20",
+            published_time_str: "",
+            dynamic_pin: "",
+            subsidy_limit: 0,
+            is_full_treat: false,
+            treat_sponsor: "",
+            is_manually_closed: false,
+            is_cancelled_session: false,
+            meals_arrived: false,
+            arrived_store_names: [],
+            arrived_at_str: ""
+          };
+        }
+
+        renderMultiSessionSwitcher();
+        updateSessionStatusAndCountdown();
+        renderOpenStoresAndMenu();
+        renderTodayOrdersView();
+        renderPersonalHistoryView();
+        updateCartUI();
+      }, err => console.warn("Session listener:", err));
+
+      // 5. 監聽合作店家與菜單庫
+      db.collection("stores").orderBy("sort_order").onSnapshot(snap => {
+        storesList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderMultiSessionSwitcher();
+        renderOpenStoresAndMenu();
+      }, err => console.warn("Stores listener:", err));
+
+      db.collection("menu_items").onSnapshot(snap => {
+        menuItemsList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderOpenStoresAndMenu();
+        renderPersonalHistoryView();
+      }, err => console.warn("MenuItems listener:", err));
+
+      // 6. 監聽團購訂單集合
+      db.collection("group_orders").orderBy("created_at", "desc").limit(800).onSnapshot(snap => {
+        allEmployeeOrders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderTodayOrdersView();
+        renderPersonalHistoryView();
+      }, err => console.warn("Orders listener:", err));
+
+      // 每 15 秒自動刷新倒數計時與開關團狀態
+      setInterval(() => {
+        updateSessionStatusAndCountdown();
+        renderMultiSessionSwitcher();
+      }, 15000);
+    }
+
+    function isSessionPastDeadline(sess) {
+      if (!sess) return true;
+      const todayKey = getTodayKey();
+      if (sess.date_key !== todayKey) return true;
+      const deadlineStr = sess.deadline || "10:20";
+      const [dh, dm] = deadlineStr.split(":").map(Number);
+      if (!isNaN(dh) && !isNaN(dm)) {
+        const now = new Date();
+        const deadlineDate = new Date();
+        deadlineDate.setHours(dh, dm, 59, 999);
+        if (now > deadlineDate) return true;
+      }
+      return false;
+    }
+
+    function renderMultiSessionSwitcher() {
+      const card = document.getElementById("multiSessionSwitcherCard");
+      const bar = document.getElementById("multiSessionPillsBar");
+      const badge = document.getElementById("multiSessionCountBadge");
+      if (!card || !bar) return;
+
+      if (allActiveSessions.length <= 1) {
+        card.style.display = "none";
+        return;
+      }
+
+      card.style.display = "block";
+      if (badge) badge.innerText = `今日共 ${allActiveSessions.length} 個場次`;
+
+      bar.innerHTML = allActiveSessions.map((sess, idx) => {
+        const isSelected = sess.id === currentSession.id;
+        const isClosed = sess.is_manually_closed || sess.is_cancelled_session || sess.meals_arrived || isSessionPastDeadline(sess);
+        const openStoreNames = storesList.filter(st => (sess.open_store_ids || []).includes(st.id)).map(st => st.name).join("、");
+        const cleanTitle = formatCleanSessionTitle(sess.title);
+
+        return `
+          <button onclick="selectEmployeeSession('${sess.id}')" style="
+            padding: 9px 14px;
+            border-radius: 10px;
+            border: 2px solid ${isSelected ? '#fbbf24' : 'rgba(255,255,255,0.25)'};
+            background: ${isSelected ? '#ffffff' : 'rgba(15,23,42,0.45)'};
+            color: ${isSelected ? '#1e3a8a' : '#f8fafc'};
+            font-size: 13px;
+            font-weight: 900;
+            white-space: nowrap;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.15s;
+          ">
+            <div>🎯 [場次 ${idx + 1}] ${cleanTitle} ${isClosed ? '<span style="color:#f43f5e;">(已截止)</span>' : `<span style="color:${isSelected ? '#15803d' : '#fde68a'};">(${sess.deadline || '10:20'}截止)</span>`}</div>
+            <div style="font-size:11px; font-weight:700; opacity:0.85; margin-top:2px;">🏪 ${openStoreNames || '載入店家中'}</div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    window.selectEmployeeSession = function(sessId) {
+      const target = allActiveSessions.find(s => s.id === sessId);
+      if (!target) return;
+      if (cart.length > 0 && selectedSessionId !== sessId) {
+        cart = [];
+        showToast("🔄 已切換團購場次，購物車已重設為新場次！");
+      }
+      selectedSessionId = sessId;
+      currentSession = target;
+      activeStoreId = null;
+      activeCategoryName = "ALL";
+      renderMultiSessionSwitcher();
+      updateSessionStatusAndCountdown();
+      renderOpenStoresAndMenu();
+      updateCartUI();
+    };
+
+    function checkSessionOrderingAllowed() {
+      const now = new Date();
+      const todayKey = getTodayKey();
+      const openIds = currentSession.open_store_ids || [];
+      const openStores = storesList.filter(s => openIds.includes(s.id));
+      const arrivedStoreNames = currentSession.arrived_store_names || [];
+      const allOpenStoresArrived = openStores.length > 0 && openStores.every(s => arrivedStoreNames.includes(s.name));
+
+      // 🌟 鐵律 1：若場次無效或場次日期不是今天 (跨日舊單)，直接鎖死禁止點餐！
+      if (!currentSession.id || currentSession.date_key !== todayKey) {
+        return {
+          allowed: false,
+          icon: "🍱",
+          title: "統籌窗口尚未發布今日開團場次",
+          desc: "今日尚未開放點餐，請待統籌窗口發布今日團購場次後再行選購！"
+        };
+      }
+
+      if (currentSession.is_cancelled_session) {
+        return {
+          allowed: false,
+          icon: "💥",
+          title: "本場次團購已由統籌窗口取消收回",
+          desc: "此團購場次已撤銷作廢，原已點選之訂單皆不計費。請切換至上方其他開放中的場次點餐！"
+        };
+      }
+
+      if (currentSession.meals_arrived || allOpenStoresArrived) {
+        return {
+          allowed: false,
+          isArrivedClosed: true,
+          icon: "🍱",
+          title: "今日團購餐點已送達・本場次已結束",
+          desc: "總務窗口已完成餐點清點並發送領餐通知，本場次團購已自動結單關閉，無法再選購或加點！"
+        };
+      }
+
+      if (currentSession.is_manually_closed) {
+        return {
+          allowed: false,
+          icon: "🛑",
+          title: "本場團購目前已截停收單",
+          desc: "目前已停止收單（先前已點的訂單仍算數）。如需緊急補單請聯繫部門助理或統籌窗口。"
+        };
+      }
+
+      if (openIds.length === 0) {
+        return {
+          allowed: false,
+          icon: "🍱",
+          title: "統籌窗口尚未發布今日開團店家",
+          desc: "請稍候，統籌窗口勾選今日開放店家並發布後，畫面將自動顯示菜單！"
+        };
+      }
+
+      // 🌟 鐵律 2：嚴格比對今日截止時間 (HH:mm)
+      const deadlineStr = currentSession.deadline || "10:20";
+      const [dh, dm] = deadlineStr.split(":").map(Number);
+      if (!isNaN(dh) && !isNaN(dm)) {
+        const deadlineDate = new Date();
+        deadlineDate.setHours(dh, dm, 59, 999);
+        if (now > deadlineDate) {
+          return {
+            allowed: false,
+            icon: "⏰",
+            title: `已超過本場次截止時間 (${deadlineStr})`,
+            desc: "本場次團購已自動鎖單停止收單，無法再點餐或修改，感謝您的配合！"
+          };
+        }
+        const diffMins = Math.max(0, Math.ceil((deadlineDate - now) / 60000));
+        return {
+          allowed: true,
+          diffMins,
+          deadlineStr
+        };
+      }
+
+      return { allowed: true, diffMins: 60, deadlineStr };
+    }
+
+    function updateSessionStatusAndCountdown() {
+      const sIdx = allActiveSessions.findIndex(s => s.id === currentSession.id);
+      const cleanTitle = formatCleanSessionTitle(currentSession.title || '今日團購訂餐');
+      document.getElementById("bannerSessionTitle").innerText = sIdx >= 0
+        ? `📅 [場次 ${sIdx + 1}] ${cleanTitle}`
+        : `📅 ${cleanTitle}`;
+
+      const pubTimeText = currentSession.published_time_str ? `今日 ${currentSession.published_time_str}` : "已開放";
+      const deadlineStr = currentSession.deadline || "10:20";
+      const timeSumEl = document.getElementById("sessionTimeSummaryText");
+      if (timeSumEl) {
+        timeSumEl.innerText = `發布時間：${pubTimeText} ｜ 截止點餐：${deadlineStr}`;
+      }
+
+      const arrivalBanner = document.getElementById("empMealArrivalBanner");
+      const allArrivedStoreNames = [...new Set(allActiveSessions.flatMap(s => {
+        if (s.meals_arrived) {
+          return storesList.filter(st => (s.open_store_ids || []).includes(st.id)).map(st => st.name);
+        }
+        return s.arrived_store_names || [];
+      }))];
+
+      if (arrivalBanner) {
+        if (allArrivedStoreNames.length > 0) {
+          arrivalBanner.style.display = "block";
+          document.getElementById("empMealArrivalTitle").innerText = `🎉 總務窗口通知：【${allArrivedStoreNames.join("、")}】餐點已送達公司！`;
+          document.getElementById("empMealArrivalDesc").innerText = "窗口已清點數量無誤，請點餐同仁或部門助理前往領餐區領取。";
+        } else {
+          arrivalBanner.style.display = "none";
+        }
+      }
+
+      // 連動模組 B：若總部關閉公費補助模組，隱藏橫幅補助標籤
+      const subTag = document.getElementById("bannerSubsidyTag");
+      const subLimit = licenseFlags.enable_company_subsidy ? Number(currentSession.subsidy_limit || 0) : 0;
+      const spName = (currentSession.treat_sponsor || "").trim();
+      if (licenseFlags.enable_company_subsidy && (currentSession.is_full_treat || subLimit >= 9999)) {
+        subTag.style.display = "inline-block";
+        subTag.innerText = spName ? `🎉 ${spName} 全額請客 (自付$0)` : `🎉 本場全額請客 (自付$0)`;
+      } else if (licenseFlags.enable_company_subsidy && subLimit > 0) {
+        subTag.style.display = "inline-block";
+        subTag.innerText = spName ? `🎁 ${spName} 每人補助 $${subLimit}` : `💰 每人補助 $${subLimit}`;
+      } else {
+        subTag.style.display = "none";
+      }
+
+      const status = checkSessionOrderingAllowed();
+      const badge = document.getElementById("bannerCountdownBadge");
+      const closedCard = document.getElementById("sessionClosedCard");
+      const openArea = document.getElementById("sessionOpenMenuArea");
+
+      if (!status.allowed) {
+        badge.innerText = status.isArrivedClosed ? `🍱 已到餐結束` : `🛑 已截止 (${deadlineStr})`;
+        badge.className = "countdown-badge closed";
+        closedCard.style.display = "block";
+        openArea.style.display = "none";
+        document.getElementById("sessionClosedIcon").innerText = status.icon;
+        document.getElementById("sessionClosedTitle").innerText = status.title;
+        document.getElementById("sessionClosedTitle").style.color = status.isArrivedClosed ? "var(--green)" : "var(--rose)";
+        document.getElementById("sessionClosedDesc").innerText = status.desc;
+      } else {
+        const hrs = Math.floor(status.diffMins / 60);
+        const mins = status.diffMins % 60;
+        const timeText = hrs > 0 ? `剩 ${hrs}小時${mins}分` : `剩 ${mins} 分鐘`;
+        badge.innerText = `⏰ ${status.deadlineStr} 截止 (${timeText})`;
+        badge.className = "countdown-badge";
+        closedCard.style.display = "none";
+        openArea.style.display = "block";
+      }
+    }
+
+    window.switchMainView = function(viewName) {
+      ["menu", "today", "history"].forEach(v => {
+        document.getElementById("view_" + v).style.display = (v === viewName) ? "block" : "none";
+        document.getElementById("navBtn_" + v).classList.toggle("active", v === viewName);
+      });
+      if (viewName === "today") renderTodayOrdersView();
+      if (viewName === "history") renderPersonalHistoryView();
+    };
+
+    function renderOpenStoresAndMenu() {
+      const storeBar = document.getElementById("openStoresTabBar");
+      const catBar = document.getElementById("storeCategoryTabBar");
+      const listEl = document.getElementById("menuItemsListContainer");
+      if (!storeBar || !listEl) return;
+
+      const openIds = currentSession.open_store_ids || [];
+      const openStores = storesList.filter(s => openIds.includes(s.id));
+
+      if (openStores.length === 0) {
+        storeBar.innerHTML = "";
+        catBar.innerHTML = "";
+        listEl.innerHTML = "";
+        return;
+      }
+
+      if (!activeStoreId || !openStores.some(s => s.id === activeStoreId)) {
+        activeStoreId = openStores[0].id;
+        activeCategoryName = "ALL";
+      }
+
+      const arrivedStoreNames = currentSession.arrived_store_names || [];
+      storeBar.innerHTML = openStores.map(st => {
+        const countInCart = cart.filter(c => c.store_id === st.id).reduce((sum, i) => sum + i.qty, 0);
+        const isStArrived = currentSession.meals_arrived || arrivedStoreNames.includes(st.name);
+        return `
+          <button class="store-pill ${st.id === activeStoreId ? 'active' : ''}" onclick="selectOpenStore('${st.id}')">
+            <span>🏪 ${st.name}${isStArrived ? ' (已到餐)' : ''}</span>
+            ${countInCart > 0 ? `<span style="background:var(--primary); color:#fff; border-radius:10px; padding:1px 7px; font-size:11px;">${countInCart}</span>` : ''}
+          </button>
+        `;
+      }).join('');
+
+      const activeStoreObj = openStores.find(s => s.id === activeStoreId);
+      const isActiveStoreArrived = activeStoreObj && (currentSession.meals_arrived || arrivedStoreNames.includes(activeStoreObj.name));
+
+      const storeItems = menuItemsList.filter(m => m.store_id === activeStoreId);
+      const categories = ["ALL", ...new Set(storeItems.map(m => m.category_name || "一般餐點"))];
+      if (!categories.includes(activeCategoryName)) activeCategoryName = "ALL";
+
+      catBar.innerHTML = categories.map(c => `
+        <button class="cat-btn ${c === activeCategoryName ? 'active' : ''}" onclick="selectStoreCategory('${c}')">
+          ${c === "ALL" ? "全部餐點" : c}
+        </button>
+      `).join('');
+
+      const visibleItems = activeCategoryName === "ALL"
+        ? storeItems
+        : storeItems.filter(m => (m.category_name || "一般餐點") === activeCategoryName);
+
+      if (!visibleItems.length) {
+        listEl.innerHTML = `<div class="card" style="text-align:center; color:var(--sub);">此分類目前尚無餐點</div>`;
+        return;
+      }
+
+      listEl.innerHTML = visibleItems.map(item => {
+        const avail = item.is_available !== false && !isActiveStoreArrived;
+        const addonText = (item.addons && item.addons.length)
+          ? `可選：${item.addons.map(a => a.name).join(' / ')}`
+          : item.category_name || '';
+
+        const btnLabel = isActiveStoreArrived ? '🍱 已到餐結單' : (item.is_available !== false ? '＋ 選購' : '已售完');
+
+        return `
+          <div class="menu-card ${avail ? '' : 'sold-out'}">
+            <div>
+              <div class="item-title">${item.name}</div>
+              ${addonText ? `<div class="item-meta">${addonText}</div>` : ''}
+              <div class="item-price">$${item.price}</div>
+            </div>
+            <button class="btn-add" ${avail ? '' : 'disabled'} onclick="openItemSpecModal('${item.id}')">
+              ${btnLabel}
+            </button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.selectOpenStore = function(storeId) {
+      activeStoreId = storeId;
+      activeCategoryName = "ALL";
+      renderOpenStoresAndMenu();
+    };
+
+    window.selectStoreCategory = function(catName) {
+      activeCategoryName = catName;
+      renderOpenStoresAndMenu();
+    };
+
+    window.openItemSpecModal = function(itemId) {
+      const status = checkSessionOrderingAllowed();
+      if (!status.allowed) {
+        showToast(`⚠️ ${status.title}`);
+        return;
+      }
+
+      const item = menuItemsList.find(m => m.id === itemId);
+      if (!item) return;
+
+      const arrivedStoreNames = currentSession.arrived_store_names || [];
+      if (currentSession.meals_arrived || arrivedStoreNames.includes(item.store_name)) {
+        showToast(`⚠️ 【${item.store_name}】餐點已送達公司並結單，無法再選購！`);
+        return;
+      }
+
+      currentModalItem = item;
+      selectedAddons = [];
+      modalQty = 1;
+
+      document.getElementById("modalItemStoreTag").innerText = item.store_name || "合作店家";
+      document.getElementById("modalItemName").innerText = item.name;
+      document.getElementById("modalItemCustomNote").value = "";
+
+      const addonGroup = document.getElementById("modalAddonGroup");
+      const addonChips = document.getElementById("modalAddonChips");
+      if (item.addons && item.addons.length > 0) {
+        addonGroup.style.display = "block";
+        addonChips.innerHTML = item.addons.map((ad, idx) => {
+          const pStr = Number(ad.price) > 0 ? ` (+$${ad.price})` : (Number(ad.price) < 0 ? ` ($${ad.price})` : '');
+          return `<div class="chip" onclick="toggleModalAddon(${idx}, this)">${ad.name}${pStr}</div>`;
+        }).join('');
+      } else {
+        addonGroup.style.display = "none";
+      }
+
+      updateModalItemPrice();
+      document.getElementById("itemModal").style.display = "flex";
+    };
+
+    window.closeItemModal = function() {
+      document.getElementById("itemModal").style.display = "none";
+    };
+
+    window.toggleModalAddon = function(idx, el) {
+      const ad = currentModalItem.addons[idx];
+      const foundIdx = selectedAddons.findIndex(a => a.name === ad.name);
+      if (foundIdx >= 0) {
+        selectedAddons.splice(foundIdx, 1);
+        el.classList.remove("selected");
+      } else {
+        selectedAddons.push(ad);
+        el.classList.add("selected");
+      }
+      updateModalItemPrice();
+    };
+
+    window.changeModalQty = function(delta) {
+      let next = modalQty + delta;
+      if (next < 1) next = 1;
+      modalQty = next;
+      updateModalItemPrice();
+    };
+
+    function updateModalItemPrice() {
+      document.getElementById("modalItemQty").innerText = modalQty;
+      const base = Number(currentModalItem.price || 0);
+      const addonSum = selectedAddons.reduce((s, a) => s + Number(a.price || 0), 0);
+      const unitPrice = Math.max(0, base + addonSum);
+      document.getElementById("modalItemSubtotal").innerText = unitPrice * modalQty;
+    }
+
+    window.confirmAddItemToCart = function() {
+      if (!currentModalItem) return;
+      const base = Number(currentModalItem.price || 0);
+      const addonSum = selectedAddons.reduce((s, a) => s + Number(a.price || 0), 0);
+      const unitPrice = Math.max(0, base + addonSum);
+      const customNote = document.getElementById("modalItemCustomNote").value.trim();
+
+      const specParts = [];
+      if (selectedAddons.length) specParts.push(selectedAddons.map(a => a.name).join(", "));
+      if (customNote) specParts.push(customNote);
+      const finalSpec = specParts.join(" / ");
+
+      const existing = cart.find(c =>
+        c.item_id === currentModalItem.id &&
+        c.spec === finalSpec
+      );
+
+      if (existing) {
+        existing.qty += modalQty;
+        existing.subtotal = existing.qty * existing.unit_price;
+      } else {
+        cart.push({
+          item_id: currentModalItem.id,
+          store_id: currentModalItem.store_id,
+          store_name: currentModalItem.store_name || "合作店家",
+          name: currentModalItem.name,
+          spec: finalSpec,
+          qty: modalQty,
+          unit_price: unitPrice,
+          subtotal: unitPrice * modalQty
+        });
+      }
+
+      closeItemModal();
+      updateCartUI();
+      renderOpenStoresAndMenu();
+      showToast(`🛒 已將「${currentModalItem.name}」加入購物車`);
+    };
+
+    function updateCartUI() {
+      const bar = document.getElementById("cartBar");
+      if (!cart.length) {
+        bar.style.display = "none";
+        return;
+      }
+      bar.style.display = "flex";
+      const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+      const rawTotal = cart.reduce((s, i) => s + i.subtotal, 0);
+      const subsidyLimit = licenseFlags.enable_company_subsidy
+        ? (currentSession.is_full_treat ? 9999 : Number(currentSession.subsidy_limit || 0))
+        : 0;
+      const selfPay = Math.max(0, rawTotal - subsidyLimit);
+
+      document.getElementById("cartCountBadge").innerText = totalQty;
+      document.getElementById("cartRawTotal").innerText = rawTotal;
+
+      const subEl = document.getElementById("cartSubsidySubtext");
+      if (licenseFlags.enable_company_subsidy && subsidyLimit > 0) {
+        subEl.style.display = "block";
+        document.getElementById("cartSelfPayTotal").innerText = selfPay;
+      } else {
+        subEl.style.display = "none";
+      }
+    }
+
+    window.openCartModal = function() {
+      if (!empProfile.employee_name || !empProfile.employee_id) {
+        openProfileModal(true);
+        return;
+      }
+      renderCartModalContent();
+      document.getElementById("checkoutErrorMsg").style.display = "none";
+      document.getElementById("cartModal").style.display = "flex";
+    };
+
+    window.closeCartModal = function() {
+      document.getElementById("cartModal").style.display = "none";
+    };
+
+    function renderCartModalContent() {
+      document.getElementById("cartModalEmpInfo").innerText = `${empProfile.department}・${empProfile.employee_name} (${empProfile.employee_id})`;
+
+      const listEl = document.getElementById("cartModalItemsList");
+      if (!cart.length) {
+        listEl.innerHTML = `<p style="text-align:center; color:var(--sub); padding:20px;">購物車是空的</p>`;
+      } else {
+        listEl.innerHTML = cart.map((c, idx) => `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:14px; font-weight:800;">
+                <span style="color:var(--primary);">[${c.store_name}]</span> ${c.name}
+              </div>
+              ${c.spec ? `<div style="font-size:12px; color:var(--sub); margin-top:2px;">規格：${c.spec}</div>` : ''}
+              <div style="font-size:13px; font-weight:800; color:#334155; margin-top:2px;">$${c.unit_price} x ${c.qty} = $${c.subtotal}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px;">
+              <button class="btn btn-gray" style="padding:4px 9px;" onclick="adjustCartItemQty(${idx}, -1)">−</button>
+              <span style="font-weight:800; font-size:13px;">${c.qty}</span>
+              <button class="btn btn-gray" style="padding:4px 9px;" onclick="adjustCartItemQty(${idx}, 1)">+</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      const rawTotal = cart.reduce((s, i) => s + i.subtotal, 0);
+      const subsidyLimit = licenseFlags.enable_company_subsidy
+        ? (currentSession.is_full_treat ? 9999 : Number(currentSession.subsidy_limit || 0))
+        : 0;
+      const usedSubsidy = Math.min(rawTotal, subsidyLimit);
+      const selfPay = Math.max(0, rawTotal - usedSubsidy);
+
+      document.getElementById("checkoutRawTotal").innerText = `$${rawTotal}`;
+      const subRow = document.getElementById("checkoutSubsidyRow");
+      if (licenseFlags.enable_company_subsidy && subsidyLimit > 0) {
+        subRow.style.display = "flex";
+        document.getElementById("checkoutSubsidyVal").innerText = `-$${usedSubsidy}`;
+      } else {
+        subRow.style.display = "none";
+      }
+      document.getElementById("checkoutSelfPayVal").innerText = `$${selfPay}`;
+
+      const needPin = licenseFlags.enable_dynamic_pin && String(currentSession.dynamic_pin || "").trim().length > 0;
+      document.getElementById("dynamicPinVerifyBox").style.display = needPin ? "block" : "none";
+    }
+
+    window.adjustCartItemQty = function(idx, delta) {
+      if (!cart[idx]) return;
+      cart[idx].qty += delta;
+      if (cart[idx].qty <= 0) {
+        cart.splice(idx, 1);
+      } else {
+        cart[idx].subtotal = cart[idx].qty * cart[idx].unit_price;
+      }
+      updateCartUI();
+      renderOpenStoresAndMenu();
+      if (!cart.length) closeCartModal();
+      else renderCartModalContent();
+    };
+
+    window.submitGroupOrder = async function() {
+      const errEl = document.getElementById("checkoutErrorMsg");
+      if (!cart.length) return;
+
+      const status = checkSessionOrderingAllowed();
+      if (!status.allowed) {
+        errEl.innerText = `🛑 送單失敗：${status.title}`;
+        errEl.style.display = "block";
+        return;
+      }
+
+      const arrivedStoreNames = currentSession.arrived_store_names || [];
+      const arrivedItemInCart = cart.find(c => arrivedStoreNames.includes(c.store_name));
+      if (arrivedItemInCart) {
+        errEl.innerText = `🛑 送單失敗：【${arrivedItemInCart.store_name}】餐點已送達公司並結單，請先從購物車移除該店餐點！`;
+        errEl.style.display = "block";
+        return;
+      }
+
+      const requiredPin = String(currentSession.dynamic_pin || "").trim();
+      if (licenseFlags.enable_dynamic_pin && requiredPin.length > 0) {
+        const inputPin = document.getElementById("checkoutDynamicPinInput").value.trim();
+        if (inputPin !== requiredPin) {
+          errEl.innerText = "❌ LINE 群動態訂餐碼不正確！請查看今日公司群組公告。";
+          errEl.style.display = "block";
+          return;
+        }
+      }
+
+      const btn = document.getElementById("btnSubmitGroupOrder");
+      btn.disabled = true;
+      btn.innerText = "⏳ 正在傳送團購訂單...";
+
+      const rawTotal = cart.reduce((s, i) => s + i.subtotal, 0);
+      const note = document.getElementById("checkoutOrderNote").value.trim();
+      const initialStatus = "pending_approval";
+
+      try {
+        await db.collection("group_orders").add({
+          session_id: currentSession.id || "current",
+          session_title: currentSession.title || "今日團購",
+          session_date: currentSession.date_key || getTodayKey(),
+          department: empProfile.department,
+          employee_name: empProfile.employee_name,
+          employee_id: empProfile.employee_id,
+          items: cart,
+          total_amount: rawTotal,
+          note: note,
+          status: initialStatus,
+          is_paid: false,
+          is_collected: false,
+          created_at: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        cart = [];
+        document.getElementById("checkoutOrderNote").value = "";
+        document.getElementById("checkoutDynamicPinInput").value = "";
+        updateCartUI();
+        renderOpenStoresAndMenu();
+        closeCartModal();
+        switchMainView("today");
+        showToast("🎉 訂單已送出！等待後台審核確認");
+      } catch (e) {
+        console.error(e);
+        errEl.innerText = "⚠️ 網路異常，送單失敗：" + e.message;
+        errEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "✅ 確認送出團購訂單";
+      }
+    };
+
+    function getMyOrdersList() {
+      if (!empProfile.employee_name && !empProfile.employee_id) return [];
+      return allEmployeeOrders.filter(o => {
+        if (o.status === "cancelled") return false;
+        const sameId = empProfile.employee_id && String(o.employee_id || "").toUpperCase() === empProfile.employee_id.toUpperCase();
+        const sameNameAndDept = o.department === empProfile.department && o.employee_name === empProfile.employee_name;
+        return sameId || sameNameAndDept;
+      });
+    }
+
+    function renderTodayOrdersView() {
+      const container = document.getElementById("todayOrdersContainer");
+      const dot = document.getElementById("todayOrderCountDot");
+      if (!container) return;
+
+      const todayKey = getTodayKey();
+      const myTodayOrders = getMyOrdersList().filter(o => o.session_date === todayKey);
+
+      if (myTodayOrders.length > 0) {
+        dot.style.display = "inline-block";
+        dot.innerText = myTodayOrders.length;
+      } else {
+        dot.style.display = "none";
+      }
+
+      if (!myTodayOrders.length) {
+        container.innerHTML = `
+          <div class="card" style="text-align:center; padding:32px 16px; color:var(--sub);">
+            <div style="font-size:38px; margin-bottom:8px;">🍱</div>
+            <p style="font-size:15px; font-weight:800; color:#334155;">您今日 (${todayKey}) 尚未送出任何團購訂單</p>
+            <button class="btn btn-primary" style="margin-top:14px;" onclick="switchMainView('menu')">👉 前往今日菜單點餐</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = myTodayOrders.map(ord => {
+        const isPending = ord.status === "pending_approval";
+        const isApproved = ord.status === "approved";
+
+        const ordSessIdx = allActiveSessions.findIndex(s => s.id === ord.session_id);
+        const ordSess = (ordSessIdx >= 0 ? allActiveSessions[ordSessIdx] : null) || currentSession;
+
+        // 🌟 第 1 點：以「單店為單位」檢查此訂單內的店家是否已到餐！
+        const orderStoreNames = [...new Set((ord.items || []).map(i => i.store_name).filter(Boolean))];
+        const arrivedStoresInOrder = orderStoreNames.filter(sn => isStoreMarkedArrivedToday(sn, ord.session_id));
+        const isAllOrderStoresArrived = isApproved && orderStoreNames.length > 0 && arrivedStoresInOrder.length === orderStoreNames.length;
+        const isPartialStoresArrived = isApproved && arrivedStoresInOrder.length > 0 && arrivedStoresInOrder.length < orderStoreNames.length;
+        const isMealArrived = isAllOrderStoresArrived;
+
+        const sessNow = new Date();
+        const [dh, dm] = (ordSess.deadline || "10:20").split(":").map(Number);
+        const dDate = new Date();
+        dDate.setHours(dh || 10, dm || 20, 59, 999);
+        const sessStillOpen = !ordSess.is_manually_closed && !ordSess.is_cancelled_session && !ordSess.meals_arrived && (sessNow <= dDate);
+
+        const canRecall = sessStillOpen && arrivedStoresInOrder.length === 0 && isPending;
+
+        const fin = calcEmpOrderFinancials(ord);
+        const isZeroSelf = fin.selfPay === 0;
+        const effectivePaid = ord.is_paid || isZeroSelf;
+
+        const isProxyOrder = Boolean(ord.is_proxy) || String(ord.employee_id || "").includes("代訂") || String(ord.note || "").includes("後台代訂");
+        const proxyTag = isProxyOrder
+          ? `<span style="background:#f3e8ff; color:#6d28d9; font-size:11px; padding:2px 6px; border-radius:6px; font-weight:800; margin-left:6px;">👤 後台代訂</span>`
+          : '';
+        const cleanOrdSessTitle = formatCleanSessionTitle(ordSess.title || ord.session_title || "今日團購");
+        const sessTitleTag = `<span style="background:#dbeafe; color:#1e40af; font-size:11px; padding:2px 7px; border-radius:6px; font-weight:800; margin-left:6px;">🎯 ${ordSessIdx >= 0 ? `[場次 ${ordSessIdx + 1}] ` : ''}${cleanOrdSessTitle}</span>`;
+
+        const itemsHtml = (ord.items || []).map(it => {
+          const storeArrived = isStoreMarkedArrivedToday(it.store_name, ord.session_id);
+          return `
+            <div style="display:flex; justify-content:space-between; font-size:14px; padding:6px 0; border-bottom:1px dashed #e2e8f0;">
+              <span>
+                <strong style="color:var(--primary);">[${it.store_name}]</strong> ${it.name}${it.spec ? ` <small style="color:var(--sub);">(${it.spec})</small>` : ''} <strong>x${it.qty}</strong>
+                ${storeArrived
+                  ? `<span style="background:#dcfce7; color:#15803d; font-size:11px; padding:2px 6px; border-radius:6px; font-weight:800; margin-left:4px;">🍱 已到餐</span>`
+                  : `<span style="background:#f1f5f9; color:#64748b; font-size:11px; padding:2px 6px; border-radius:6px; font-weight:700; margin-left:4px;">⏳ 未到餐</span>`}
+              </span>
+              <strong>$${it.subtotal}</strong>
+            </div>
+          `;
+        }).join('');
+
+        const payStatusLabel = isZeroSelf ? "🎁 請客免收($0)" : (ord.is_paid ? "已繳費" : "待繳費");
+        const arrivalStatusLabel = isAllOrderStoresArrived
+          ? "餐點已送達公司"
+          : (isPartialStoresArrived ? `部分店家已送達 (${arrivedStoresInOrder.join('、')})` : "餐點未送達");
+        const statusBannerHtml = isPending
+          ? `<div style="background:#fef3c7; border:1.5px solid #f59e0b; color:#b45309; padding:9px 12px; border-radius:10px; font-size:13px; font-weight:900; margin:8px 0; display:flex; align-items:center; justify-content:space-between;">
+               <span>⏳ 等待後台/部門助理審核中</span>
+               <span style="font-size:11px; font-weight:700;">(${payStatusLabel})</span>
+             </div>`
+          : `<div style="background:#dcfce7; border:1.5px solid #22c55e; color:#15803d; padding:9px 12px; border-radius:10px; font-size:13px; font-weight:900; margin:8px 0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px;">
+               <span>✅ 訂單已正式成立 (${payStatusLabel} / ${arrivalStatusLabel})</span>
+             </div>`;
+
+        return `
+          <div class="card" style="border-left: 6px solid ${isMealArrived ? 'var(--primary)' : (isApproved ? 'var(--green)' : 'var(--accent)')};">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
+              <div>
+                <span style="font-size:12px; font-weight:800; background:#e2e8f0; padding:3px 8px; border-radius:6px;">${ord.department}</span>
+                <strong style="font-size:15px; margin-left:6px;">${ord.employee_name} (${ord.employee_id || ''})</strong>${sessTitleTag}${proxyTag}
+              </div>
+              <span style="font-size:12px; font-weight:800; color:${effectivePaid ? 'var(--green)' : 'var(--rose)'};">
+                ${isZeroSelf ? '🎁 請客/補助免付費' : (ord.is_paid ? '💰 已繳清 (助理/人事已收款)' : '⏳ 待收款 / 週結月結')}
+              </span>
+            </div>
+
+            ${statusBannerHtml}
+
+            <div class="stepper">
+              <div class="step-item ${isPending ? 'active' : 'done'}">
+                <div class="step-dot">${isPending ? '1' : '✓'}</div>
+                <div>⏳ 待審核確認</div>
+              </div>
+              <div class="step-item ${isApproved && !isMealArrived ? 'active' : (isMealArrived ? 'done' : '')}">
+                <div class="step-dot">${isMealArrived ? '✓' : '2'}</div>
+                <div>✅ 已核准成立</div>
+              </div>
+              <div class="step-item ${isMealArrived ? 'done' : (isPartialStoresArrived ? 'active' : '')}">
+                <div class="step-dot">${isMealArrived ? '✓' : '3'}</div>
+                <div>🍱 ${isMealArrived ? '餐點已到公司' : (isPartialStoresArrived ? '部分店家已到' : '餐點未送達')}</div>
+              </div>
+            </div>
+
+            <div style="margin:8px 0;">${itemsHtml}</div>
+            ${ord.note ? `<div style="font-size:12px; color:#b45309; background:#fffbeb; padding:6px 10px; border-radius:8px; margin-bottom:8px;">備註：${ord.note}</div>` : ''}
+
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; flex-wrap:wrap; gap:10px;">
+              <div>
+                <span style="font-size:12px; color:var(--sub);">餐點總額 $${fin.rawTotal}${fin.subsidyUsed > 0 ? ` (${fin.treatLabel} -$${fin.subsidyUsed})` : ''} ｜ </span>
+                <strong style="font-size:16px; color:${isZeroSelf ? 'var(--purple)' : 'var(--primary)'};">應自付：$${fin.selfPay}</strong>
+              </div>
+              ${canRecall ? `
+                <button class="btn btn-danger-outline" style="padding:7px 12px; font-size:12px;" onclick="recallOrderToModify('${ord.id}')">
+                  ✏️ 撤回購物車修改餐點
+                </button>
+              ` : `
+                <span style="font-size:12px; color:${isMealArrived ? 'var(--green)' : 'var(--sub)'}; font-weight:800;">
+                  ${isMealArrived ? '🎉 窗口已清點到餐，請領取！' : (isApproved ? '🔒 已核准鎖定 (可點上方繼續加點新單)' : '🔒 已截止鎖單')}
+                </span>
+              `}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.recallOrderToModify = async function(orderId) {
+      const ord = allEmployeeOrders.find(o => o.id === orderId);
+      if (!ord) return;
+      const ordSess = allActiveSessions.find(s => s.id === ord.session_id) || currentSession;
+      if (ord.session_id && ordSess) {
+        selectedSessionId = ordSess.id;
+        currentSession = ordSess;
+        renderMultiSessionSwitcher();
+      }
+      const status = checkSessionOrderingAllowed();
+      if (!status.allowed) {
+        showToast("⚠️ 該場次已超過結單時間，無法撤回修改！");
+        return;
+      }
+
+      try {
+        await db.collection("group_orders").doc(orderId).update({ status: "cancelled" });
+        cart = [...(ord.items || [])];
+        document.getElementById("checkoutOrderNote").value = ord.note || "";
+        updateCartUI();
+        renderOpenStoresAndMenu();
+        switchMainView("menu");
+        openCartModal();
+        showToast("↩️ 已將原訂單撤回購物車，請調整後重新送出！");
+      } catch (e) {
+        console.error(e);
+        showToast("⚠️ 撤回失敗：" + e.message);
+      }
+    };
+
+    function renderPersonalHistoryView() {
+      updateHeaderProfileUI();
+      const container = document.getElementById("historyOrdersContainer");
+      if (!container) return;
+
+      const range = document.getElementById("historyFilterRange")?.value || "month";
+      const monthPrefix = getMonthPrefix();
+      const now = new Date();
+
+      const myOrders = getMyOrdersList().filter(o => {
+        if (range === "week") return isDateInCurrentWeek(o.session_date);
+        if (range === "month") return String(o.session_date || "").startsWith(monthPrefix);
+        if (range === "days30") {
+          if (!o.session_date) return true;
+          const od = new Date(o.session_date);
+          return (now - od) <= 30 * 86400000;
+        }
+        return true;
+      });
+
+      let totalRaw = 0;
+      let totalUnpaidSelf = 0;
+
+      myOrders.forEach(o => {
+        const fin = calcEmpOrderFinancials(o);
+        totalRaw += fin.rawTotal;
+        if (!o.is_paid && fin.selfPay > 0) totalUnpaidSelf += fin.selfPay;
+      });
+
+      document.getElementById("statTotalOrders").innerText = `${myOrders.length} 單`;
+      document.getElementById("statRawAmount").innerText = `$${totalRaw}`;
+      document.getElementById("statUnpaidSelf").innerText = `$${totalUnpaidSelf}`;
+
+      if (!myOrders.length) {
+        container.innerHTML = `
+          <div class="card" style="text-align:center; padding:30px 16px; color:var(--sub);">
+            此區間內尚無您的點餐歷史紀錄。<br>
+            <small>（若您剛換手機，請點右上角「🔄 換機/改工號」輸入原工號即可自動找回雲端紀錄）</small>
+          </div>
+        `;
+        return;
+      }
+
+      const openStoreIds = currentSession.open_store_ids || [];
+      const orderingAllowed = checkSessionOrderingAllowed().allowed;
+      const arrivedStoreNames = currentSession.arrived_store_names || [];
+
+      container.innerHTML = myOrders.map(ord => {
+        const fin = calcEmpOrderFinancials(ord);
+        const isZeroSelf = fin.selfPay === 0;
+        const effectivePaid = ord.is_paid || isZeroSelf;
+
+        const itemsHtml = (ord.items || []).map((it, idx) => {
+          const matchedLiveItem = menuItemsList.find(m =>
+            (m.id === it.item_id || (m.store_name === it.store_name && m.name === it.name)) &&
+            openStoreIds.includes(m.store_id) &&
+            !arrivedStoreNames.includes(m.store_name) &&
+            m.is_available !== false
+          );
+
+          return `
+            <div style="display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px dashed #f1f5f9; gap:8px;">
+              <div style="font-size:13px;">
+                <strong style="color:var(--primary);">[${it.store_name}]</strong> ${it.name}
+                ${it.spec ? `<small style="color:var(--sub);">(${it.spec})</small>` : ''}
+                <strong>x${it.qty}</strong> — $${it.subtotal}
+              </div>
+              ${(matchedLiveItem && orderingAllowed) ? `
+                <button class="btn btn-orange" style="padding:4px 9px; font-size:11px; flex-shrink:0;" onclick="reorderHistoryItem('${ord.id}', ${idx})">
+                  🔁 再來一份
+                </button>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="card" style="padding:15px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:8px; margin-bottom:8px; flex-wrap:wrap; gap:4px;">
+              <div>
+                <strong style="font-size:14px; color:#0f172a;">📅 ${ord.session_date || '歷史訂單'}</strong>
+                <span style="font-size:11px; margin-left:6px; padding:2px 7px; border-radius:6px; background:${ord.status === 'approved' ? '#dcfce7' : '#fef3c7'}; color:${ord.status === 'approved' ? '#15803d' : '#b45309'}; font-weight:800;">
+                  ${ord.status === 'approved' ? '✅ 已核准成立' : '⏳ 待審核'}
+                </span>
+              </div>
+              <span style="font-size:12px; font-weight:900; padding:3px 9px; border-radius:8px; background:${effectivePaid ? '#dbeafe' : '#ffe4e6'}; color:${effectivePaid ? '#1e40af' : '#be123c'};">
+                ${isZeroSelf ? '🎁 請客/補助免收 ($0)' : (ord.is_paid ? '💰 已繳清 / 已扣薪' : '⏳ 待扣薪 / 未繳')}
+              </span>
+            </div>
+            <div>${itemsHtml}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; font-size:13px; flex-wrap:wrap; gap:6px;">
+              <span style="color:var(--sub);">部門：${ord.department}</span>
+              <div>
+                <span>餐點總額 $${fin.rawTotal}${fin.subsidyUsed > 0 ? ` (${fin.treatLabel} -$${fin.subsidyUsed})` : ''} ｜ </span>
+                <strong style="font-size:15px; color:${isZeroSelf ? 'var(--purple)' : 'var(--primary)'};">自付額：$${fin.selfPay}</strong>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.reorderHistoryItem = function(orderId, itemIdx) {
+      const ord = allEmployeeOrders.find(o => o.id === orderId);
+      if (!ord || !ord.items || !ord.items[itemIdx]) return;
+      const histItem = ord.items[itemIdx];
+
+      const openStoreIds = currentSession.open_store_ids || [];
+      const liveItem = menuItemsList.find(m =>
+        (m.id === histItem.item_id || (m.store_name === histItem.store_name && m.name === histItem.name)) &&
+        openStoreIds.includes(m.store_id) &&
+        m.is_available !== false
+      );
+
+      if (!liveItem) {
+        showToast("⚠️ 該店家今日未開團或該品項已售完！");
+        return;
+      }
+
+      const unitPrice = Number(histItem.unit_price || liveItem.price || 0);
+      const existing = cart.find(c => c.item_id === liveItem.id && c.spec === (histItem.spec || ""));
+      if (existing) {
+        existing.qty += 1;
+        existing.subtotal = existing.qty * existing.unit_price;
+      } else {
+        cart.push({
+          item_id: liveItem.id,
+          store_id: liveItem.store_id,
+          store_name: liveItem.store_name || histItem.store_name,
+          name: liveItem.name,
+          spec: histItem.spec || "",
+          qty: 1,
+          unit_price: unitPrice,
+          subtotal: unitPrice
+        });
+      }
+
+      updateCartUI();
+      renderOpenStoresAndMenu();
+      showToast(`🔁 已將「[${liveItem.store_name}] ${liveItem.name}」加入今日購物車！`);
+    };
+
+    window.addEventListener("DOMContentLoaded", initRealtimeListeners);
+  </script>
+</body>
+</html>
